@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Configure worker via CDN to avoid bundling issues
+const WORKER_SRC = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+pdfjs.GlobalWorkerOptions.workerSrc = WORKER_SRC as any;
 
 export type PdfViewerProps = {
   fileUrl: string;
@@ -30,7 +32,13 @@ export function PdfViewer({ fileUrl }: PdfViewerProps) {
 
   return (
     <div ref={wrapRef} className="w-full">
-      <Document file={fileUrl} onLoadSuccess={onLoadSuccess} loading={<div className="text-sm text-black/60 dark:text-white/60">Carregando PDF...</div>} noData={<div className="text-sm">Nenhum PDF</div>}>
+      <Document
+        file={fileUrl}
+        options={{ workerSrc: WORKER_SRC as any }}
+        onLoadSuccess={onLoadSuccess}
+        loading={<div className="text-sm text-black/60 dark:text-white/60">Carregando PDF...</div>}
+        noData={<div className="text-sm">Nenhum PDF</div>}
+      >
         {pages.map((p) => (
           <Page key={p} pageNumber={p} width={containerWidth} renderTextLayer={false} renderAnnotationLayer={false} />
         ))}
