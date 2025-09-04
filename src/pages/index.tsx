@@ -114,7 +114,7 @@ export default function Home() {
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".docx") {
           const parsed = await parseDOCX(file.name, buf);
-          setDocs((prev) => [parsed, ...prev]);
+          setDocs((prev) => [{ ...parsed, blobUrl }, ...prev]);
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".xlsx") {
           const parsed = await parseXLSX(file.name, buf);
