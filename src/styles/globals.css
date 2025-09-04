@@ -31,3 +31,24 @@ body {
   padding: 0 2px;
   border-radius: 3px;
 }
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.excel-table th,
+.excel-table td {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+@media (prefers-color-scheme: dark) {
+  .excel-table th,
+  .excel-table td {
+    border-color: rgba(255, 255, 255, 0.145);
+  }
+}
+.excel-table thead th {
+  font-weight: 600;
+}
