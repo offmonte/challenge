@@ -244,7 +244,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm">Arraste arquivos aqui ou clique para selecionar</p>
                 <label htmlFor="file-input" className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm h-9 px-4 cursor-pointer">Selecionar arquivos</label>
-                <input id="file-input" type="file" className="hidden" accept={acceptExt.join(",")} multiple onChange={(e) => handleFiles(e.currentTarget.files)} />
+                <input id="file-input" type="file" className="hidden" accept={acceptAttr} multiple onChange={(e) => handleFiles(e.currentTarget.files)} />
                 <span className="text-[11px] text-black/60 dark:text-white/60">Suporta: PDF, DOCX, DOC, XLSX</span>
               </div>
               {errors.length > 0 && (
