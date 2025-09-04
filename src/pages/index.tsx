@@ -129,6 +129,7 @@ export default function Home() {
               '<div class="text-sm">O formato .doc não é suportado no navegador. Converta para .docx e envie novamente.</div>',
             contentText: ".doc not supported",
             error: ".doc parsing is not supported in-browser",
+            blobUrl,
           };
           setDocs((prev) => [parsed, ...prev]);
           setSelectedId((sid) => sid ?? parsed.id);
