@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,56 +12,251 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+type ParsedDoc = {
+  id: string;
+  name: string;
+  type: "pdf" | "docx" | "doc" | "xlsx";
+  contentHtml: string;
+  contentText: string;
+  error?: string;
+};
+
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function stripTags(html: string) {
+  if (typeof window === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
+
 export default function Home() {
+  const [docs, setDocs] = useState<ParsedDoc[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  const keywords = useMemo(() => {
+    return query
+      .split(/[,\s]+/)
+      .map((k) => k.trim())
+      .filter(Boolean);
+  }, [query]);
+
+  const acceptExt = [".pdf", ".docx", ".doc", ".xlsx"];
+
+  const addError = useCallback((msg: string) => {
+    setErrors((prev) => [...prev, msg]);
+    setTimeout(() => setErrors((prev) => prev.slice(1)), 5000);
+  }, []);
+
+  const parsePDF = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
+    const pdfjsLib = await import("pdfjs-dist");
+    const loadingTask = pdfjsLib.getDocument({ data: buf, disableWorker: true });
+    const pdf = await loadingTask.promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = (content.items as any[])
+        .map((item: any) => (typeof item.str === "string" ? item.str : ""))
+        .filter(Boolean);
+      fullText += strings.join(" ") + "\n";
+    }
+    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c as "&" | "<" | ">"]!));
+    const contentHtml = `<pre>${esc(fullText)}</pre>`;
+    return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, type: "pdf", contentHtml, contentText: fullText };
+  }, []);
+
+  const parseDOCX = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
+    const mammoth = await import("mammoth/mammoth.browser.js");
+    const result = await mammoth.convertToHtml({ arrayBuffer: buf });
+    const html = result.value as string;
+    const text = stripTags(html);
+    return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, type: "docx", contentHtml: html, contentText: text };
+  }, []);
+
+  const parseXLSX = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(buf, { type: "array" });
+    let htmlParts: string[] = [];
+    let textParts: string[] = [];
+    wb.SheetNames.forEach((sn: string) => {
+      const ws = wb.Sheets[sn];
+      const html = XLSX.utils.sheet_to_html(ws, { header: `<h3 class="text-base font-semibold mb-2">${sn}</h3>` });
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      htmlParts.push(html);
+      textParts.push(csv);
+    });
+    return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, type: "xlsx", contentHtml: htmlParts.join("\n"), contentText: textParts.join("\n") };
+  }, []);
+
+  const handleFiles = useCallback(async (fileList: FileList | null) => {
+    if (!fileList) return;
+    const incoming = Array.from(fileList);
+    for (const file of incoming) {
+      const ext = "." + file.name.split(".").pop()!.toLowerCase();
+      if (!acceptExt.includes(ext)) {
+        addError(`Unsupported file type for ${file.name}`);
+        continue;
+      }
+      try {
+        const buf = await file.arrayBuffer();
+        if (ext === ".pdf") {
+          const parsed = await parsePDF(file.name, buf);
+          setDocs((prev) => [parsed, ...prev]);
+        } else if (ext === ".docx") {
+          const parsed = await parseDOCX(file.name, buf);
+          setDocs((prev) => [parsed, ...prev]);
+        } else if (ext === ".xlsx") {
+          const parsed = await parseXLSX(file.name, buf);
+          setDocs((prev) => [parsed, ...prev]);
+        } else if (ext === ".doc") {
+          setDocs((prev) => [
+            {
+              id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+              name: file.name,
+              type: "doc",
+              contentHtml:
+                '<div class="text-sm">This .doc format is not supported for in-browser parsing. Please convert to .docx and re-upload.</div>',
+              contentText: ".doc not supported",
+              error: ".doc parsing is not supported in-browser",
+            },
+            ...prev,
+          ]);
+        }
+      } catch (e: any) {
+        addError(`Failed to parse ${file.name}: ${e?.message || e}`);
+      }
+    }
+  }, [addError, parseDOCX, parsePDF, parseXLSX]);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles]
+  );
+
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const filterDocs = useMemo(() => {
+    if (keywords.length === 0) return docs;
+    const regex = new RegExp(keywords.map(escapeRegex).join("|"), "i");
+    return docs.filter((d) => regex.test(d.contentText));
+  }, [docs, keywords]);
+
+  const highlightHtml = useCallback(
+    (html: string) => {
+      if (keywords.length === 0) return html;
+      if (typeof window === "undefined") return html;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const rx = new RegExp(`(${keywords.map(escapeRegex).join("|")})`, "gi");
+      const walk = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.nodeValue || "";
+          if (!rx.test(text)) return;
+          rx.lastIndex = 0;
+          const frag = document.createDocumentFragment();
+          let last = 0;
+          text.replace(rx, (m, _g, idx: number) => {
+            if (idx > last) frag.appendChild(document.createTextNode(text.slice(last, idx)));
+            const mark = document.createElement("mark");
+            mark.className = "keyword-highlight";
+            mark.textContent = m;
+            frag.appendChild(mark);
+            last = idx + m.length;
+            return m;
+          });
+          if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+          node.parentNode?.replaceChild(frag, node);
+          return;
+        }
+        Array.from(node.childNodes).forEach(walk);
+      };
+      walk(doc.body);
+      return doc.body.innerHTML;
+    },
+    [keywords]
+  );
+
   return (
     <div
       className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
     >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="flex flex-col gap-[24px] row-start-2 w-full max-w-5xl">
+        <div className="flex items-center gap-3">
+          <Image className="dark:invert" src="/next.svg" alt="Next.js logo" width={120} height={26} priority />
+          <h1 className="text-xl font-semibold">File Search & Highlight</h1>
+        </div>
+
+        <div
+          ref={dropRef}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          className="rounded-xl border border-black/[.08] dark:border-white/[.145] p-4 sm:p-6 bg-background"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <label htmlFor="file-input" className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm h-10 px-4 cursor-pointer">
+                Choose files
+              </label>
+              <input
+                id="file-input"
+                type="file"
+                className="hidden"
+                accept={acceptExt.join(",")}
+                multiple
+                onChange={(e) => handleFiles(e.currentTarget.files)}
+              />
+              <span className="text-xs text-black/60 dark:text-white/60">or drag & drop .pdf, .docx, .doc, .xlsx</span>
+            </div>
+            <div className="flex-1 w-full sm:w-auto">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search keywords..."
+                className="w-full sm:w-80 rounded-full border border-black/[.08] dark:border-white/[.145] bg-transparent px-4 h-10 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
+              />
+            </div>
+          </div>
+          {errors.length > 0 && (
+            <ul className="mt-3 text-sm text-red-600 dark:text-red-400 list-disc pl-5">
+              {errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filterDocs.map((d) => (
+            <article key={d.id} className="rounded-xl border border-black/[.08] dark:border-white/[.145] p-4 bg-background">
+              <header className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold truncate" title={d.name}>{d.name}</h2>
+                <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-black/[.08] dark:border-white/[.145]">{d.type}</span>
+              </header>
+              {d.error && (
+                <div className="text-xs mb-2 text-amber-700 dark:text-amber-400">{d.error}</div>
+              )}
+              <div
+                className="max-w-none text-sm leading-relaxed break-words"
+                dangerouslySetInnerHTML={{ __html: highlightHtml(d.contentHtml) }}
+              />
+            </article>
+          ))}
+          {filterDocs.length === 0 && (
+            <div className="text-sm text-black/60 dark:text-white/60">No documents match your search.</div>
+          )}
         </div>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
@@ -70,13 +266,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
           Learn
         </a>
         <a
@@ -85,13 +275,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
           Examples
         </a>
         <a
@@ -100,13 +284,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
           Go to nextjs.org →
         </a>
       </footer>
