@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.keyword-highlight {
+  background: #fff59d;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
