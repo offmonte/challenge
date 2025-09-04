@@ -87,16 +87,48 @@ export default function Home() {
   const parseXLSX = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
     const XLSX = await import("xlsx");
     const wb = XLSX.read(buf, { type: "array" });
+    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c as "&" | "<" | ">"]!));
+
     let htmlParts: string[] = [];
     let textParts: string[] = [];
+
     wb.SheetNames.forEach((sn: string) => {
       const ws = wb.Sheets[sn];
-      const html = XLSX.utils.sheet_to_html(ws, { header: `<h3 class=\"text-base font-semibold mb-2\">${sn}</h3>` });
-      const csv = XLSX.utils.sheet_to_csv(ws);
-      htmlParts.push(html);
-      textParts.push(csv);
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+      const textSheet: string[] = [];
+
+      if (rows.length === 0) {
+        htmlParts.push(`<h3 class=\"text-base font-semibold mb-2\">${esc(sn)}</h3><div class=\"text-sm text-black/60 dark:text-white/60\">Planilha vazia</div>`);
+        return;
+      }
+
+      const head = rows[0] as any[];
+      const body = rows.slice(1) as any[][];
+
+      const thead = `<thead><tr>${head
+        .map((c) => `<th>${esc(String(c))}</th>`)
+        .join("")}</tr></thead>`;
+
+      const tbody = `<tbody>${body
+        .map((r) => {
+          textSheet.push(r.map((c) => String(c)).join("\t"));
+          return `<tr>${r
+            .map((c) => `<td>${esc(String(c)).replace(/\n/g, "<br>")}</td>`)
+            .join("")}</tr>`;
+        })
+        .join("")}</tbody>`;
+
+      htmlParts.push(`<h3 class=\"text-base font-semibold mb-2\">${esc(sn)}</h3><table class=\"excel-table\">${thead}${tbody}</table>`);
+      textParts.push(textSheet.join("\n"));
     });
-    return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, type: "xlsx", contentHtml: htmlParts.join("\n"), contentText: textParts.join("\n") };
+
+    return {
+      id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+      name,
+      type: "xlsx",
+      contentHtml: htmlParts.join("\n"),
+      contentText: textParts.join("\n"),
+    };
   }, []);
 
   const handleFiles = useCallback(async (fileList: FileList | null) => {
