@@ -57,8 +57,10 @@ export default function Home() {
   }, []);
 
   const parsePDF = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
-    const pdfjsLib = await import("pdfjs-dist");
-    const loadingTask = pdfjsLib.getDocument({ data: buf, disableWorker: true });
+    const { pdfjs } = await import("react-pdf");
+    const WORKER_SRC = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    (pdfjs as any).GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    const loadingTask = (pdfjs as any).getDocument({ data: buf });
     const pdf = await loadingTask.promise;
     let fullText = "";
     for (let i = 1; i <= pdf.numPages; i++) {
