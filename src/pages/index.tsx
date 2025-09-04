@@ -107,6 +107,7 @@ export default function Home() {
       }
       try {
         const buf = await file.arrayBuffer();
+        const blobUrl = URL.createObjectURL(file);
         if (ext === ".pdf") {
           const parsed = await parsePDF(file.name, buf);
           setDocs((prev) => [parsed, ...prev]);
