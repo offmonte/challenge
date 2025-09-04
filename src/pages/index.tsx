@@ -312,7 +312,7 @@ export default function Home() {
                     <div className="text-xs mb-2 text-amber-700 dark:text-amber-400">{selected.error}</div>
                   )}
                   {selected.type === "pdf" && selected.blobUrl ? (
-                    <iframe src={selected.blobUrl} className="w-full h-[70vh] rounded-lg border border-black/[.06] dark:border-white/[.12]" />
+                    <PdfViewer fileUrl={selected.blobUrl} />
                   ) : (
                     <div className="max-w-none text-sm leading-relaxed break-words" dangerouslySetInnerHTML={{ __html: highlightHtml(selected.contentHtml) }} />
                   )}
