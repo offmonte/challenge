@@ -58,7 +58,7 @@ export default function Home() {
 
   const parsePDF = useCallback(async (name: string, buf: ArrayBuffer): Promise<ParsedDoc> => {
     const { pdfjs } = await import("react-pdf");
-    const WORKER_SRC = "/pdf.worker.min.js" as const;
+    const WORKER_SRC = "/pdf.worker.min.mjs" as const;
     (pdfjs as any).GlobalWorkerOptions.workerSrc = WORKER_SRC;
     const loadingTask = (pdfjs as any).getDocument({ data: buf });
     const pdf = await loadingTask.promise;
