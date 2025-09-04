@@ -30,11 +30,14 @@ export function PdfViewer({ fileUrl }: PdfViewerProps) {
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
 
+  const options = useMemo(() => ({ workerSrc: WORKER_SRC as any }), []);
+
   return (
     <div ref={wrapRef} className="w-full">
       <Document
+        key={fileUrl}
         file={fileUrl}
-        options={{ workerSrc: WORKER_SRC as any }}
+        options={options}
         onLoadSuccess={onLoadSuccess}
         loading={<div className="text-sm text-black/60 dark:text-white/60">Carregando PDF...</div>}
         noData={<div className="text-sm">Nenhum PDF</div>}
