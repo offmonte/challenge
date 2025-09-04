@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-// Configure worker via CDN to avoid bundling issues
-const WORKER_SRC = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-pdfjs.GlobalWorkerOptions.workerSrc = WORKER_SRC as any;
+// Configure worker via CDN to match the installed pdfjs version
+const WORKER_SRC = `https://unpkg.com/pdfjs-dist@${(pdfjs as any).version}/build/pdf.worker.min.js`;
+(pdfjs as any).GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
 export type PdfViewerProps = {
   fileUrl: string;
