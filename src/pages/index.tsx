@@ -347,6 +347,8 @@ export default function Home() {
                   )}
                   {selected.type === "pdf" && selected.blobUrl ? (
                     <PdfViewer fileUrl={selected.blobUrl} />
+                  ) : selected.type === "docx" && selected.blobUrl ? (
+                    <DynamicDocxViewer fileUrl={selected.blobUrl} />
                   ) : (
                     <div className="max-w-none text-sm leading-relaxed break-words" dangerouslySetInnerHTML={{ __html: highlightHtml(selected.contentHtml) }} />
                   )}
