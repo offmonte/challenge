@@ -48,6 +48,7 @@ export default function Home() {
   }, [query]);
 
   const acceptExt = [".pdf", ".docx", ".doc", ".xlsx"];
+  const acceptAttr = "application/pdf,.pdf,.docx,.doc,.xlsx";
 
   const addError = useCallback((msg: string) => {
     setErrors((prev) => [...prev, msg]);
