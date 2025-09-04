@@ -328,7 +328,7 @@ export default function Home() {
 
           {/* Right column: preview */}
           <section className="col-span-12 md:col-span-8">
-            <div className="rounded-xl border border-black/[.08] dark:border-white/[.145] bg-background p-5 min-h-[420px]">
+            <div className="rounded-xl border border-black/[.08] dark:border-white/[.145] bg-background p-5 min-h-[420px] max-h-[70vh] overflow-auto">
               {!selected ? (
                 <div className="h-full w-full flex items-center justify-center text-center">
                   <div className="max-w-md">
