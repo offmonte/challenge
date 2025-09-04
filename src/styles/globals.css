@@ -52,3 +52,26 @@ body {
 .excel-table thead th {
   font-weight: 600;
 }
+
+/* Ensure DOCX preview fits container */
+.docx-container {
+  width: 100%;
+  overflow: auto;
+}
+.docx-container .docx-wrapper {
+  width: 100%;
+}
+.docx-container .docx {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 16px !important;
+  box-sizing: border-box;
+}
+.docx-container .docx img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+.docx-container .docx p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
