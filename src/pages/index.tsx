@@ -110,7 +110,7 @@ export default function Home() {
         const blobUrl = URL.createObjectURL(file);
         if (ext === ".pdf") {
           const parsed = await parsePDF(file.name, buf);
-          setDocs((prev) => [parsed, ...prev]);
+          setDocs((prev) => [{ ...parsed, blobUrl }, ...prev]);
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".docx") {
           const parsed = await parseDOCX(file.name, buf);
