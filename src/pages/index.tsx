@@ -208,6 +208,7 @@ export default function Home() {
   );
 
   const selected = filtered.find((d) => d.id === selectedId) || null;
+  const PdfViewer = useMemo(() => dynamic(() => import("../components/PdfViewer").then((m) => m.PdfViewer), { ssr: false }), []);
 
   return (
     <div className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-6 sm:p-10 pb-24 gap-10`}>
