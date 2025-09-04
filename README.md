@@ -2,89 +2,114 @@
 
 Aplicação que permite fazer upload e visualizar arquivos (.pdf, .docx, .xlsx e aviso para .doc), pesquisar por palavras‑chave e destacar resultados. UI responsiva com Tailwind CSS.
 
+## Sumário
+- [Funcionalidades](#funcionalidades)
+- [Arquitetura e Estrutura do Projeto](#arquitetura-e-estrutura-do-projeto)
+- [Fluxo de Funcionamento](#fluxo-de-funcionamento)
+- [Tecnologias](#tecnologias)
+- [Estilos e Acessibilidade](#estilos-e-acessibilidade)
+- [Erros e Tratamento](#erros-e-tratamento)
+- [Execução Local](#execução-local)
+- [Deploy (Vercel)](#deploy-vercel)
+- [Solução de Problemas](#solução-de-problemas)
+- [Próximos Passos (opcional)](#próximos-passos-opcional)
+
 ## Funcionalidades
-- Upload de múltiplos arquivos com validação (arrastar/soltar e seletor).
+- Upload de múltiplos arquivos (arrastar/soltar e seletor) com validação por extensão.
 - Visualização:
-  - PDF: renderizado com React‑PDF (PDF.js) preservando layout.
-  - DOCX: renderizado com docx-preview mantendo formatação básica (parágrafos, imagens, estilos).
-  - XLSX: convertido em HTML semântico (<table>) para leitura clara.
-  - DOC: não suportado nativamente no navegador; mostra orientação para converter para .docx.
-- Busca por palavras‑chave (lista separada por espaço/vírgula) e destaque em conteúdos HTML.
-- Feedback de erros (tipos inválidos, falhas de parsing).
+  - PDF: React‑PDF (PDF.js) com worker local para compatibilidade de versão.
+  - DOCX: docx-preview com preservação de layout básico (parágrafos, imagens, estilos).
+  - XLSX: conversão para `<table>` semântica (thead/tbody), com quebra de linha.
+  - DOC: não suportado no navegador; exibe orientação para converter para .docx.
+- Busca por palavras‑chave (separadas por espaço ou vírgula) com filtro de documentos e destaque visual.
+- UI responsiva, dark mode e mensagens de erro amigáveis.
 
-## Tecnologias e por quê
-- Next.js + TypeScript: DX, roteamento e build otimizados.
-- Tailwind CSS: utilitários rápidos, mantendo o visual original do template.
-- react‑pdf (PDF.js): renderização de PDF no cliente com fidelidade.
-- docx-preview: melhor preservação de layout de DOCX que conversões somente para texto/HTML.
-- xlsx: leitura de planilhas e conversão para tabela HTML semântica.
+## Arquitetura e Estrutura do Projeto
+```
+.
+├─ public/
+│  └─ pdf.worker.min.mjs              # Worker do PDF.js servido localmente
+├─ src/
+│  ├─ components/
+│  │  ├─ HeaderBar.tsx               # Cabeçalho com busca e contagem de arquivos
+│  │  ├─ UploadDropzone.tsx          # Área de upload (drag & drop + input)
+│  │  ├─ FileList.tsx                # Lista de arquivos com seleção
+│  │  ├─ PreviewPane.tsx             # Painel de visualização dinâmico
+│  │  ├─ PdfViewer.tsx               # Visualizador de PDF (React‑PDF)
+│  │  └─ DocxViewer.tsx              # Visualizador de DOCX (docx-preview)
+│  ├─ lib/
+│  │  ├─ parser.ts                   # Parse de PDF/DOCX/XLSX em HTML + texto
+│  │  ├─ highlight.ts                # Destaque de palavras‑chave em HTML
+│  │  └─ text.ts                     # Utilitários de texto (escapeRegex, stripTags)
+│  ├─ pages/
+│  │  ├─ _app.tsx                    # Import de estilos globais
+│  │  ├─ _document.tsx               # Marcação base e lang
+│  │  └─ index.tsx                   # Página principal (orquestração e estado)
+│  ├─ styles/
+│  │  └─ globals.css                 # Variáveis de tema, classes utilitárias e tabelas
+│  └─ types/
+│     └─ docs.ts                     # Tipagens (ParsedDoc, DocType)
+├─ eslint.config.mjs                 # ESLint (Next + TS)
+├─ next.config.ts                    # React strict mode
+├─ postcss.config.mjs                # Tailwind CSS v4
+├─ tsconfig.json                     # Paths e strict mode
+└─ package.json                      # Scripts e dependências
+```
 
-## Estrutura (arquivos relevantes)
-- `src/pages/index.tsx`: página principal (upload, parsing, busca, UI de lista/preview).
-- `src/components/PdfViewer.tsx`: visualizador PDF (React‑PDF) com configuração do worker.
-- `src/components/DocxViewer.tsx`: visualizador DOCX (docx-preview).
-- `src/styles/globals.css`: estilos globais, destaque de palavras e tabela do XLSX.
-- `public/pdf.worker.min.mjs`: worker do PDF.js servido localmente (evita incompatibilidade de versões/CDN).
+### Decisões de design
+- Página `index.tsx` atua apenas como camada de coordenação (estado e composição de componentes). Sem lógica de parsing inline.
+- Lógica de parsing/extração isolada em `src/lib/parser.ts` para fácil manutenção e testes.
+- Destaque de busca em `src/lib/highlight.ts` (função pura para reaproveitamento e testes).
+- Tipagens compartilhadas em `src/types/docs.ts` para consistência e legibilidade.
+- Componentes visuais pequenos, com responsabilidades claras e nomes descritivos.
+- Imports com alias `@/*` (configurado em `tsconfig.json`).
 
-## Executando localmente
-1. Instale dependências:
+## Fluxo de Funcionamento
+1. Upload: `UploadDropzone` dispara `onFiles`; `index.tsx` valida extensão e cria Blob URL.
+2. Parsing:
+   - PDF → extrai texto com PDF.js e também permite visualização fiel via `PdfViewer`.
+   - DOCX → converte para HTML com `docx-preview` (render no cliente).
+   - XLSX → lê planilhas com `xlsx` e monta HTML semântico.
+3. Busca: `HeaderBar` atualiza `query`; `index.tsx` filtra documentos por regex e repassa `keywords`.
+4. Destaque: `PreviewPane` aplica `highlightHtml` nos conteúdos HTML renderizados.
+5. Seleção: `FileList` controla documento ativo; seleção é mantida ao filtrar sempre que possível.
+
+## Tecnologias
+- Next.js 15, React 19, TypeScript, Tailwind CSS 4
+- react-pdf + pdfjs-dist, docx-preview, xlsx
+
+## Estilos e Acessibilidade
+- Variáveis CSS para tema claro/escuro preservadas; classes utilitárias do Tailwind.
+- Tabela XLSX com semântica (`<thead>`, `<tbody>`) e contraste de bordas configurável em dark mode.
+- Área de upload com label conectada ao input (teclado/leitor de tela).
+
+## Erros e Tratamento
+- Extensões inválidas → mensagem listada ao usuário.
+- `.doc` → informa não suportado nativamente e sugere conversão para `.docx`.
+- Falhas de parsing → mensagem descritiva em lista de erros.
+- Observações: conteúdo destacado usa `dangerouslySetInnerHTML`; se for exibir HTML não confiável, adicionar sanitização.
+
+## Execução Local
+1. Instalar dependências:
    ```bash
    npm install
    ```
-2. Inicie o servidor de desenvolvimento:
+2. Rodar em desenvolvimento:
    ```bash
    npm run dev
    ```
-3. Acesse http://localhost:3000 e faça upload dos arquivos.
-
-## Como funciona cada formato
-### PDF (React‑PDF)
-- Configuração do worker local (evita erros de versão e de network):
-  - Arquivo: `public/pdf.worker.min.mjs` (copiado da versão do `pdfjs-dist` usada pelo `react-pdf`).
-  - Uso: `src/components/PdfViewer.tsx` e parsing de texto em `src/pages/index.tsx` configuram `pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"`.
-- Observações:
-  - Destaque de busca não é aplicado dentro do canvas do PDF (apenas em HTML renderizado).
-  - Se preferir, é possível alternar para `<iframe src={blobUrl}>` como fallback simples.
-
-### DOCX (docx-preview)
-- Carrega o arquivo via Blob URL e renderiza no container `.docx-container`.
-- CSS em `globals.css` garante que o documento não extrapole o preview (largura 100%, imagens responsivas).
-- Limitações: recursos avançados (alguns shapes/headers complexos) podem não ser 100% idênticos ao Word.
-
-### XLSX (xlsx)
-- Uso de `XLSX.utils.sheet_to_json(ws, { header: 1 })` para obter matriz de células.
-- Geração de `<table class="excel-table">` com `<thead>` e `<tbody>`; quebra de linha preservada com `<br>`.
-- Estilos em `globals.css` para bordas e legibilidade; cabeçalho pode ser tornado "sticky" facilmente.
-
-## Busca e destaque
-- Campo no cabeçalho aceita palavras separadas por espaço/vírgula.
-- Filtragem por regex (case‑insensitive) em `contentText` de cada documento.
-- Destaque com `<mark.keyword-highlight>` nos conteúdos HTML (DOCX/XLSX/Texto de PDF extraído). Não afeta o canvas do PDF.
-
-## Tratamento de erros
-- Tipos não suportados mostram mensagem amigável.
-- Falhas de parsing são exibidas em lista de alertas.
-- `.doc` exibe instrução para converter para `.docx`.
-
-## Decisões de arquitetura
-- Todo parsing é client‑side para evitar necessidade de backend/infra.
-- Worker do PDF servido localmente para evitar mismatch de versão entre API e worker.
-- Carregamentos pesados (React‑PDF, DocxViewer) via `dynamic(..., { ssr: false })` para não quebrar SSR.
+3. Acessar http://localhost:3000
 
 ## Deploy (Vercel)
-- Build padrão Next.js. Configure a pasta `public/` para incluir `pdf.worker.min.mjs`.
-- Após deploy, se houver erro de worker versão, rode novamente `npm install` local e copie o worker da pasta: `node_modules/react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs` para `public/`.
+- Importar o repositório no Vercel e fazer deploy padrão de app Next.js.
+- Certifique-se de que `public/pdf.worker.min.mjs` está versionado; o React‑PDF usa esse caminho.
 
-## Solução de problemas
-- "API version ... does not match Worker version ...":
-  - Confirme que o `public/pdf.worker.min.mjs` foi copiado da mesma versão do `pdfjs-dist` usada por `react-pdf`.
-  - Limpe o cache do navegador (Ctrl+F5 / Cmd+Shift+R).
-- "Failed to fetch" ao carregar PDF:
-  - Certifique‑se de que o `workerSrc` aponta para `/pdf.worker.min.mjs` e que o arquivo existe em produção.
-- DOCX saindo da área de preview:
-  - Estilos `.docx-container .docx { width: 100% !important; }` já aplicados; ajuste `max-h`/`overflow` do painel conforme necessário.
+## Solução de Problemas
+- "API version ... does not match Worker version ...": garanta que o worker em `public/` tem a mesma versão do `pdfjs-dist` instalado.
+- PDF sem renderizar: verifique a existência de `/pdf.worker.min.mjs` e cache do navegador.
+- DOCX fora do contêiner: estilos em `.docx-container .docx { width: 100% !important; }` já aplicados.
 
-## Próximos passos (opcional)
-- Fallback automático para iframe no PDF quando o worker falhar.
-- Cabeçalho sticky nas tabelas XLSX e paginação de planilhas grandes.
-- Persistência dos uploads em storage externo (ex.: Supabase) quando desejado.
+## Próximos Passos (opcional)
+- Sanitização de HTML antes do destaque para cenários com conteúdo não confiável.
+- Virtualização/paginação para planilhas grandes.
+- Persistência dos uploads (ex.: Supabase) e compartilhamento de sessões.
