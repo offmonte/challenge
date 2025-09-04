@@ -19,6 +19,7 @@ type ParsedDoc = {
   contentHtml: string;
   contentText: string;
   error?: string;
+  blobUrl?: string;
 };
 
 function escapeRegex(s: string) {
