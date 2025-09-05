@@ -65,7 +65,13 @@ export default function Home() {
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".doc") {
           try {
-            const b64 = Buffer.from(buf).toString("base64");
+            const bytes = new Uint8Array(buf);
+            let binary = "";
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk) {
+              binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+            }
+            const b64 = btoa(binary);
             const resp = await fetch("/api/convert-doc", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
