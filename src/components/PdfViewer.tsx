@@ -8,9 +8,10 @@ const WORKER_SRC = "/pdf.worker.min.mjs" as const;
 
 export type PdfViewerProps = {
   fileUrl: string;
+  keywords: string[];
 };
 
-export function PdfViewer({ fileUrl }: PdfViewerProps) {
+export function PdfViewer({ fileUrl, keywords }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -30,6 +31,62 @@ export function PdfViewer({ fileUrl }: PdfViewerProps) {
 
   const pages = useMemo(() => Array.from({ length: numPages }, (_, i) => i + 1), [numPages]);
 
+  useEffect(() => {
+    const root = wrapRef.current;
+    if (!root) return;
+    if (!keywords || keywords.length === 0) {
+      // Remove previous highlights if any
+      root.querySelectorAll("mark.keyword-highlight").forEach((m) => {
+        const parent = m.parentNode;
+        if (!parent) return;
+        parent.replaceChild(document.createTextNode(m.textContent || ""), m);
+        parent.normalize();
+      });
+      return;
+    }
+    const rx = new RegExp(`(${keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+
+    const apply = () => {
+      // Unwrap previous marks to avoid nested highlights
+      root.querySelectorAll("mark.keyword-highlight").forEach((m) => {
+        const parent = m.parentNode;
+        if (!parent) return;
+        parent.replaceChild(document.createTextNode(m.textContent || ""), m);
+        parent.normalize();
+      });
+      // Highlight inside PDF text layer spans
+      const layers = root.querySelectorAll<HTMLDivElement>(".react-pdf__Page__textContent");
+      layers.forEach((layer) => {
+        const spans = layer.querySelectorAll<HTMLSpanElement>("span");
+        spans.forEach((span) => {
+          const text = span.textContent || "";
+          if (!rx.test(text)) return;
+          rx.lastIndex = 0;
+          const parts: (string | HTMLElement)[] = [];
+          let last = 0;
+          text.replace(rx, (m, _g, idx: number) => {
+            if (idx > last) parts.push(text.slice(last, idx));
+            const mark = document.createElement("mark");
+            mark.className = "keyword-highlight";
+            mark.textContent = m;
+            parts.push(mark);
+            last = idx + m.length;
+            return m;
+          });
+          if (last < text.length) parts.push(text.slice(last));
+          span.innerHTML = "";
+          parts.forEach((p) => {
+            if (typeof p === "string") span.appendChild(document.createTextNode(p));
+            else span.appendChild(p);
+          });
+        });
+      });
+    };
+
+    // Apply after render; a small delay ensures text layers exist
+    const raf = requestAnimationFrame(() => setTimeout(apply, 0));
+    return () => cancelAnimationFrame(raf);
+  }, [keywords, numPages, fileUrl]);
 
   return (
     <div ref={wrapRef} className="w-full">
@@ -41,7 +98,7 @@ export function PdfViewer({ fileUrl }: PdfViewerProps) {
         noData={<div className="text-sm">Nenhum PDF</div>}
       >
         {pages.map((p) => (
-          <Page key={p} pageNumber={p} width={containerWidth} renderTextLayer={false} renderAnnotationLayer={false} />
+          <Page key={p} pageNumber={p} width={containerWidth} renderTextLayer={true} renderAnnotationLayer={false} />
         ))}
       </Document>
     </div>
