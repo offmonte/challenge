@@ -3,7 +3,7 @@ Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc sho
 
 ## Table of Contents
 - [Features](#features)
-- [UI/UX](#ui-ux)
+- [UI/UX](#uiux)
 - [Architecture and Project Structure](#architecture-and-project-structure)
 - [How It Works](#how-it-works)
 - [Technologies](#technologies)
@@ -11,7 +11,6 @@ Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc sho
 - [Errors and Handling](#errors-and-handling)
 - [Local Development](#local-development)
 - [Build and Production](#build-and-production)
-- [Deploy (Vercel)](#deploy-vercel)
 - [Troubleshooting](#troubleshooting)
 
 ## Features
