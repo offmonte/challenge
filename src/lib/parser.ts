@@ -3,6 +3,25 @@ import type { ParsedDoc } from "@/types/docs";
 
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c as "&" | "<" | ">"]!));
 
+function sanitizeHtml(html: string) {
+  if (typeof window === "undefined") return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  // Remove unsafe elements
+  doc.querySelectorAll("script, iframe, object, embed").forEach((el) => el.remove());
+  // Clean unsafe attributes
+  doc.querySelectorAll("*").forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith("on")) el.removeAttribute(attr.name);
+      if ((name === "href" || name === "src") && /^javascript:/i.test(attr.value)) {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+  return doc.body.innerHTML;
+}
+
 export async function parsePDF(name: string, buf: ArrayBuffer): Promise<ParsedDoc> {
   const { pdfjs } = await import("react-pdf");
   (pdfjs as any).GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -29,12 +48,13 @@ export async function parsePDF(name: string, buf: ArrayBuffer): Promise<ParsedDo
 export async function parseDOCX(name: string, buf: ArrayBuffer): Promise<ParsedDoc> {
   const mammoth = await import("mammoth/mammoth.browser.js");
   const result = await mammoth.convertToHtml({ arrayBuffer: buf });
-  const html = result.value as string;
-  const text = stripTags(html);
+  const rawHtml = result.value as string;
+  const safeHtml = sanitizeHtml(rawHtml);
+  const text = stripTags(safeHtml);
   return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     name,
     type: "docx",
-    contentHtml: html,
+    contentHtml: safeHtml,
     contentText: text };
 }
 
