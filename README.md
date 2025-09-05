@@ -1,4 +1,4 @@
-# Visualizador de Arquivos + Busca (Next.js + TypeScript)
+# File Viewer + Search (Next.js + TypeScript)
 
 Aplicação que permite fazer upload e visualizar arquivos (.pdf, .docx, .xlsx; .doc exibe aviso), realizar busca por frase exata e destacar ocorrências na visualização (incluindo PDF, DOCX e XLSX). UI responsiva com Tailwind CSS.
 
