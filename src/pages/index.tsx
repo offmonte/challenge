@@ -97,16 +97,9 @@ export default function Home() {
               setDocs((prev) => [{ ...parsed, blobUrl: convBlobUrl }, ...prev]);
               setSelectedId((sid) => sid ?? parsed.id);
             } catch (err: any) {
-              const parsed: ParsedDoc = {
-                id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-                name: file.name,
-                type: "doc",
-                contentHtml:
-                  '<div class="text-sm">Falha ao converter .doc automaticamente. Converta para .docx e envie novamente.</div>',
-                contentText: ".doc not supported",
-                error: ".doc parsing is not supported in-browser",
-                blobUrl,
-              };
+              const parsed = await parseDOCFallback(file.name, buf);
+              parsed.error = "ERR_DOC_CONVERT_FAILED";
+              parsed.blobUrl = blobUrl;
               setDocs((prev) => [parsed, ...prev]);
               setSelectedId((sid) => sid ?? parsed.id);
             }
