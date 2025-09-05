@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { escapeRegex } from "@/lib/text";
 
 function argbToCss(argb?: { argb?: string } | null): string | null {
   const a = argb?.argb;
