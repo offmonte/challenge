@@ -3,6 +3,7 @@ Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc sho
 
 ## Table of Contents
 - [Features](#features)
+- [UI/UX](#ui-ux)
 - [Architecture and Project Structure](#architecture-and-project-structure)
 - [How It Works](#how-it-works)
 - [Technologies](#technologies)
@@ -26,6 +27,12 @@ Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc sho
   - Sort by relevance (occurrences in content + weight on file name).
   - Visual highlighting of the phrase in rendered contents (HTML, XLSX, PDF, DOCX).
 - Responsive UI, dark mode and friendly error messages.
+
+## UI/UX
+The interface is **simple, minimalistic, and easy to use**, ensuring that any user can interact with it effortlessly.  
+The layout automatically adapts to the system's **light or dark mode**, providing visual comfort and consistency.  
+The design was inspired by the **Next.js / Vercel style**, focusing on clarity and content.
+
 
 ## Architecture and Project Structure
 ```
@@ -115,12 +122,6 @@ Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc sho
 - PDF.js worker is at `public/pdf.worker.min.mjs` and is referenced in both `PdfViewer` and the PDF parser.
 - PDF Text Layer styles are imported in `src/components/PdfViewer.tsx`.
 - `exceljs` is client-only (loaded dynamically in `XlsxViewer`).
-
-## Deploy (Vercel)
-1. Import the repository into Vercel (Framework: Next.js).
-2. Build command: `next build` (default). Output: `.next/`.
-3. Ensure `public/pdf.worker.min.mjs` is versioned.
-4. No required environment variables.
 
 ## Troubleshooting
 - PDF.js version mismatch: verify `pdf.worker.min.mjs` matches `pdfjs-dist` in `package.json`.
