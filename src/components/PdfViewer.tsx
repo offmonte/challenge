@@ -95,8 +95,8 @@ export function PdfViewer({ fileUrl, keywords }: PdfViewerProps) {
         key={fileUrl}
         file={fileUrl}
         onLoadSuccess={onLoadSuccess}
-        loading={<div className="text-sm text-black/60 dark:text-white/60">Carregando PDF...</div>}
-        noData={<div className="text-sm">Nenhum PDF</div>}
+        loading={<div className="text-sm text-black/60 dark:text-white/60">Loading PDF...</div>}
+        noData={<div className="text-sm">No PDF</div>}
       >
         {pages.map((p) => (
           <Page key={p} pageNumber={p} width={containerWidth} renderTextLayer={true} renderAnnotationLayer={false} />
