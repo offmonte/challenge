@@ -26,7 +26,10 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const debouncedQuery = useDebouncedValue(query, 300);
-  const keywords = useMemo(() => debouncedQuery.split(/[\,\s]+/).map((k) => k.trim()).filter(Boolean), [debouncedQuery]);
+  const keywords = useMemo(() => {
+    const q = debouncedQuery.trim();
+    return q ? [q] : [];
+  }, [debouncedQuery]);
 
   const acceptExt = [".pdf", ".docx", ".doc", ".xlsx"] as const;
   const acceptAttr = "application/pdf,.pdf,.docx,.doc,.xlsx" as const;
