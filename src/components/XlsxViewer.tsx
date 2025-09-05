@@ -21,7 +21,7 @@ function applyHighlight(root: HTMLElement, words: string[]) {
     (parent as HTMLElement).normalize();
   });
   if (!words || words.length === 0) return;
-  const rx = new RegExp(`(${words.map((k) => k.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")).join("|")})`, "gi");
+  const rx = new RegExp(`(${words.map((k) => escapeRegex(k)).join("|")})`, "gi");
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const toProcess: Text[] = [];
   let n: Node | null;
