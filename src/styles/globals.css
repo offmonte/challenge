@@ -26,10 +26,15 @@ body {
 }
 
 .keyword-highlight {
-  background: #fff59d;
+  background: #2596ff;
   color: inherit;
   padding: 0 2px;
   border-radius: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  .keyword-highlight {
+    color: #000;
+  }
 }
 
 .excel-table {

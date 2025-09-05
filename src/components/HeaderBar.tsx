@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export type HeaderBarProps = {
   query: string;
   onQueryChange: (v: string) => void;
@@ -10,7 +8,6 @@ export function HeaderBar({ query, onQueryChange, count }: HeaderBarProps) {
   return (
     <header className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-3">
-        <Image className="dark:invert" src="/next.svg" alt="Next.js logo" width={28} height={28} />
         <div>
           <h1 className="text-lg sm:text-xl font-semibold">Visualizador de Arquivos</h1>
           <p className="text-xs text-black/60 dark:text-white/60">Upload e visualização de PDF, DOCX, DOC e XLSX</p>
