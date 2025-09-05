@@ -27,16 +27,16 @@ body {
 
 .keyword-highlight {
   background: #2596ff;
+  color: #000;
   /*color: inherit; */
   padding: 0 2px;
   border-radius: 3px;
-  color: #000;
 }
-@media (prefers-color-scheme: dark) {
+/*@media (prefers-color-scheme: dark) {
   .keyword-highlight {
     color: #000;
   }
-}
+}*/
 
 .excel-table {
   width: 100%;
