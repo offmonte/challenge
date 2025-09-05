@@ -71,7 +71,7 @@ export async function parseXLSX(name: string, buf: ArrayBuffer): Promise<ParsedD
     const textSheet: string[] = [];
 
     if (rows.length === 0) {
-      htmlParts.push(`<h3 class="text-base font-semibold mb-2">${esc(sn)}</h3><div class="text-sm text-black/60 dark:text-white/60">Planilha vazia</div>`);
+      htmlParts.push(`<h3 class="text-base font-semibold mb-2">${esc(sn)}</h3><div class="text-sm text-black/60 dark:text-white/60">Empty sheet</div>`);
       return;
     }
 
@@ -101,17 +101,17 @@ export async function parseXLSX(name: string, buf: ArrayBuffer): Promise<ParsedD
 }
 
 export async function parseDOCFallback(name: string, buf: ArrayBuffer): Promise<ParsedDoc> {
-  // Extração básica de texto de um arquivo .doc binário (baixa fidelidade)
+  // Basic text extraction from a binary .doc file (low fidelity)
   const bytes = new Uint8Array(buf);
   let binary = "";
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  // Mantém sequências de caracteres imprimíveis (ASCII) e quebras de linha
+  // Keeps sequences of printable characters (ASCII) and line breaks
   const matches = binary.match(/[\t\r\n\x20-\x7E]{3,}/g) || [];
   const text = matches.join("\n");
-  const contentHtml = `<div class="text-xs text-amber-700 dark:text-amber-400 mb-2">Pré-visualização de texto simples de arquivo .doc (baixa fidelidade)</div><pre>${esc(text)}</pre>`;
+  const contentHtml = `<div class="text-xs text-amber-700 dark:text-amber-400 mb-2">Plain text preview of .doc file (low fidelity)</div><pre>${esc(text)}</pre>`;
   return {
     id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
     name,

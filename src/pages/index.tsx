@@ -45,7 +45,7 @@ export default function Home() {
     for (const file of incoming) {
       const ext = "." + file.name.split(".").pop()!.toLowerCase();
       if (!acceptExt.includes(ext as any)) {
-        addError(`Formato não suportado: ${file.name}`);
+        addError(`Unsupported format: ${file.name}`);
         continue;
       }
       try {
@@ -64,8 +64,8 @@ export default function Home() {
           setDocs((prev) => [{ ...parsed, blobUrl }, ...prev]);
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".doc") {
-          // Conversão automática via CloudConvert está desativada por padrão.
-          // Para ativar: defina NEXT_PUBLIC_CLOUDCONVERT_ENABLED=true no build e configure CLOUDCONVERT_API_KEY no servidor.
+          // Automatic conversion via CloudConvert is disabled by default.
+          // To enable: set NEXT_PUBLIC_CLOUDCONVERT_ENABLED=true at build time and configure CLOUDCONVERT_API_KEY on the server.
           const enableCloudConvert = process.env.NEXT_PUBLIC_CLOUDCONVERT_ENABLED === "true";
           if (!enableCloudConvert) {
             const parsed = await parseDOCFallback(file.name, buf);
@@ -106,7 +106,7 @@ export default function Home() {
           }
         }
       } catch (e: any) {
-        addError(`Falha ao processar ${file.name}: ${e?.message || e}`);
+        addError(`Failed to process ${file.name}: ${e?.message || e}`);
       }
     }
   }, [addError]);
@@ -173,7 +173,7 @@ export default function Home() {
       </main>
 
       <footer className="row-start-3 w-full text-center text-[11px] text-black/60 dark:text-white/60">
-        Visualizador de Arquivos - Suporte para PDF, DOCX, DOC e XLSX · Desenvolvido com Next.js, TypeScript e Tailwind CSS
+        File Viewer - Support for PDF, DOCX, DOC and XLSX · Built with Next.js, TypeScript and Tailwind CSS
       </footer>
     </div>
   );

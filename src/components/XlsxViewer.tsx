@@ -188,7 +188,7 @@ export function XlsxViewer({ fileUrl, keywords }: { fileUrl: string; keywords: s
         });
         if (!cancelled) setSheets(parsed);
       } catch (e) {
-        if (containerRef.current) containerRef.current.textContent = "Falha ao carregar XLSX.";
+        if (containerRef.current) containerRef.current.textContent = "Failed to load XLSX.";
       }
     }
     load();

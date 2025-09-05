@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* outras opções de configuração */
+  /* other configuration options */
   reactStrictMode: true,
   eslint: {
-    // Isso permite que a build seja completada mesmo com erros de ESLint:
+    // This allows the build to complete even with ESLint errors:
     ignoreDuringBuilds: true,
   },
 };

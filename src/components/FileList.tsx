@@ -9,9 +9,9 @@ export type FileListProps = {
 export function FileList({ items, selectedId, onSelect }: FileListProps) {
   return (
     <div className="rounded-xl border border-black/[.08] dark:border-white/[.145] bg-background">
-      <header className="px-4 py-3 border-b border-black/[.06] dark:border-white/[.12] text-sm font-medium">Arquivos</header>
+      <header className="px-4 py-3 border-b border-black/[.06] dark:border-white/[.12] text-sm font-medium">Files</header>
       {items.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-black/60 dark:text-white/60">Nenhum arquivo enviado</div>
+        <div className="px-4 py-10 text-center text-sm text-black/60 dark:text-white/60">No files uploaded</div>
       ) : (
         <ul className="max-h-[420px] overflow-auto divide-y divide-black/[.06] dark:divide-white/[.12]">
           {items.map((d) => (

@@ -27,10 +27,10 @@ export function UploadDropzone({ accept, onFiles, errors }: UploadDropzoneProps)
         <div className="rounded-full border border-black/[.08] dark:border-white/[.145] w-12 h-12 flex items-center justify-center">
           <span className="text-xl">⬆️</span>
         </div>
-        <p className="text-sm">Arraste arquivos aqui ou clique para selecionar</p>
-        <label htmlFor="file-input" className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm h-9 px-4 cursor-pointer">Selecionar arquivos</label>
+        <p className="text-sm">Drag files here or click to select</p>
+        <label htmlFor="file-input" className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm h-9 px-4 cursor-pointer">Select files</label>
         <input id="file-input" type="file" className="hidden" accept={accept} multiple onChange={(e) => onFiles(e.currentTarget.files)} />
-        <span className="text-[11px] text-black/60 dark:text-white/60">Suporta: PDF, DOCX, DOC, XLSX</span>
+        <span className="text-[11px] text-black/60 dark:text-white/60">Supports: PDF, DOCX, DOC, XLSX</span>
       </div>
       {errors.length > 0 && (
         <ul className="mt-3 text-sm text-red-600 dark:text-red-400 list-disc pl-5">

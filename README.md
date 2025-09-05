@@ -1,130 +1,129 @@
-# File Viewer + Search (Next.js + TypeScript)
 
-Aplicação que permite fazer upload e visualizar arquivos (.pdf, .docx, .xlsx; .doc exibe aviso), realizar busca por frase exata e destacar ocorrências na visualização (incluindo PDF, DOCX e XLSX). UI responsiva com Tailwind CSS.
+Application that lets you upload and preview files (.pdf, .docx, .xlsx; .doc shows a notice), search for an exact phrase, and highlight occurrences in the preview (including PDF, DOCX and XLSX). Responsive UI with Tailwind CSS.
 
-## Sumário
-- [Funcionalidades](#funcionalidades)
-- [Arquitetura e Estrutura do Projeto](#arquitetura-e-estrutura-do-projeto)
-- [Fluxo de Funcionamento](#fluxo-de-funcionamento)
-- [Tecnologias](#tecnologias)
-- [Performance e Segurança](#performance-e-segurança)
-- [Erros e Tratamento](#erros-e-tratamento)
-- [Execução Local](#execução-local)
-- [Build e Produção](#build-e-produção)
+## Table of Contents
+- [Features](#features)
+- [Architecture and Project Structure](#architecture-and-project-structure)
+- [How It Works](#how-it-works)
+- [Technologies](#technologies)
+- [Performance and Security](#performance-and-security)
+- [Errors and Handling](#errors-and-handling)
+- [Local Development](#local-development)
+- [Build and Production](#build-and-production)
 - [Deploy (Vercel)](#deploy-vercel)
-- [Solução de Problemas](#solução-de-problemas)
+- [Troubleshooting](#troubleshooting)
 
-## Funcionalidades
-- Upload de múltiplos arquivos (arrastar/soltar e seletor) com validação por extensão.
-- Visualização:
-  - PDF: React‑PDF (PDF.js) com worker local; destaque de termos aplicado na Text Layer.
-  - DOCX: docx-preview com preservação de layout; destaque pós-render diretamente no DOM.
-  - XLSX: visualização com formatação via ExcelJS (larguras de coluna, merges, alinhamento, fonte/tamanho, cores de célula e bordas), renderizada como `<table>`.
-  - DOC: não suportado no navegador; exibe orientação para converter para .docx.
-- Busca por frase exata:
-  - O texto digitado é tratado como UM termo único (sem dividir por espaço/vírgula).
-  - Filtro de documentos por ocorrência da frase no conteúdo e no nome do arquivo.
-  - Ordenação por relevância (ocorrências no conteúdo + peso no nome do arquivo).
-  - Destaque visual da frase nos conteúdos renderizados (HTML, XLSX, PDF, DOCX).
-- UI responsiva, dark mode e mensagens de erro amigáveis.
+## Features
+- Upload multiple files (drag & drop and file picker) with extension validation.
+- Preview:
+  - PDF: React‑PDF (PDF.js) with local worker; term highlighting applied on the Text Layer.
+  - DOCX: docx-preview with layout preserved; post-render highlighting directly in the DOM.
+  - XLSX: preview with formatting via ExcelJS (column widths, merges, alignment, font/size, cell colors and borders), rendered as a `<table>`.
+  - DOC: not supported in the browser; shows guidance to convert to .docx.
+- Exact phrase search:
+  - The text you type is treated as ONE single term (no splitting by space/comma).
+  - Filter documents by occurrences of the phrase in content and in the file name.
+  - Sort by relevance (occurrences in content + weight on file name).
+  - Visual highlighting of the phrase in rendered contents (HTML, XLSX, PDF, DOCX).
+- Responsive UI, dark mode and friendly error messages.
 
-## Arquitetura e Estrutura do Projeto
+## Architecture and Project Structure
 ```
 .
 ├─ public/
-│  └─ pdf.worker.min.mjs              # Worker do PDF.js servido localmente
+│  └─ pdf.worker.min.mjs              # PDF.js worker served locally
 ├─ src/
 │  ├─ components/
-│  │  ├─ HeaderBar.tsx               # Cabeçalho com busca e contagem de arquivos
-│  │  ├─ UploadDropzone.tsx          # Área de upload (drag & drop + input)
-│  │  ├─ FileList.tsx                # Lista de arquivos com seleção
-│  │  ├─ PreviewPane.tsx             # Painel de visualização dinâmico
-│  │  ├─ PdfViewer.tsx               # Visualizador de PDF (React‑PDF) + destaque
-│  │  ├─ DocxViewer.tsx              # Visualizador de DOCX (docx-preview) + destaque
-│  │  └─ XlsxViewer.tsx              # Visualizador de XLSX com formatação (ExcelJS) + destaque
+│  │  ├─ HeaderBar.tsx               # Header with search and file count
+│  │  ├─ UploadDropzone.tsx          # Upload area (drag & drop + input)
+│  │  ├─ FileList.tsx                # File list with selection
+│  │  ├─ PreviewPane.tsx             # Dynamic preview panel
+│  │  ├─ PdfViewer.tsx               # PDF viewer (React‑PDF) + highlight
+│  │  ├─ DocxViewer.tsx              # DOCX viewer (docx-preview) + highlight
+│  │  └─ XlsxViewer.tsx              # XLSX viewer with formatting (ExcelJS) + highlight
 │  ├─ lib/
-│  │  ├─ parser.ts                   # Parse de PDF/DOCX/XLSX em HTML + texto; sanitização de DOCX; extração de texto de PDF/XLSX
-│  │  ├─ highlight.ts                # Destaque de palavras‑chave em HTML
-│  │  ├─ hooks.ts                    # useDebouncedValue (debounce da busca)
-│  │  └─ text.ts                     # Utilitários de texto (escapeRegex, stripTags)
+│  │  ├─ parser.ts                   # Parse PDF/DOCX/XLSX to HTML + text; DOCX sanitization; extract text from PDF/XLSX
+│  │  ├─ highlight.ts                # Keyword highlighting in HTML
+│  │  ├─ hooks.ts                    # useDebouncedValue (search debounce)
+│  │  └─ text.ts                     # Text utilities (escapeRegex, stripTags)
 │  ├─ pages/
-│  │  ├─ _app.tsx                    # Import de estilos globais
-│  │  ├─ _document.tsx               # Marcação base e lang
-│  │  └─ index.tsx                   # Página principal (estado, filtro, revogação de blobs)
+│  │  ├─ _app.tsx                    # Import global styles
+│  │  ├─ _document.tsx               # Base markup and lang
+│  │  └─ index.tsx                   # Main page (state, filter, blob revocation)
 │  ├─ styles/
-│  │  └─ globals.css                 # Variáveis de tema, classes utilitárias, tabelas e estilos XLSX
+│  │  └─ globals.css                 # Theme vars, utility classes, tables and XLSX styles
 │  └─ types/
-│     └─ docs.ts                     # Tipagens (ParsedDoc, DocType)
+│     └─ docs.ts                     # Types (ParsedDoc, DocType)
 ├─ eslint.config.mjs                 # ESLint (Next + TS)
-├─ next.config.ts                    # Configurações do Next
+├─ next.config.ts                    # Next config
 ├─ postcss.config.mjs                # Tailwind CSS v4
-├─ tsconfig.json                     # Paths e strict mode
-└─ package.json                      # Scripts e dependências
+├─ tsconfig.json                     # Paths and strict mode
+└─ package.json                      # Scripts and dependencies
 ```
 
-### Decisões de design
-- `src/pages/index.tsx` coordena estado (docs, query, seleção), delegando parsing e visualização para módulos específicos.
-- Parsing isolado em `src/lib/parser.ts` (extração de texto/HTML); visualização DOCX/PDF/XLSX em componentes dedicados.
-- Destaque em HTML via `src/lib/highlight.ts`; PDF via Text Layer; DOCX e XLSX pós-render no DOM.
-- Tipagens centralizadas em `src/types/docs.ts` e imports com `@/*` (configurado em `tsconfig.json`).
+### Design Decisions
+- `src/pages/index.tsx` coordinates state (docs, query, selection), delegating parsing and rendering to specific modules.
+- Parsing isolated in `src/lib/parser.ts` (text/HTML extraction); DOCX/PDF/XLSX rendering in dedicated components.
+- Highlighting in HTML via `src/lib/highlight.ts`; PDF via Text Layer; DOCX and XLSX post-render in the DOM.
+- Types centralized in `src/types/docs.ts` and imports via `@/*` (configured in `tsconfig.json`).
 
-## Fluxo de Funcionamento
-1. Upload: `UploadDropzone` dispara `onFiles`; `index.tsx` valida extensão e cria Blob URL.
-2. Parsing/extração:
-   - PDF → extrai texto com PDF.js para busca; visualização fiel via `PdfViewer`.
-   - DOCX → renderizado via `docx-preview`; HTML sanitizado em `parser.ts` para exibição segura.
-   - XLSX → texto extraído via `xlsx` (para busca); visualização com formatação via `XlsxViewer` (ExcelJS) usando o Blob.
-3. Busca: `HeaderBar` atualiza `query`; `useDebouncedValue` (300ms) suaviza digitação; `index.tsx` calcula relevância e ordena resultados.
-4. Destaque: `PreviewPane` aplica `highlightHtml` em HTML/XLSX fallback; `PdfViewer` destaca na Text Layer; `DocxViewer` e `XlsxViewer` destacam após renderização.
-5. Seleção: `FileList` controla documento ativo; seleção é mantida quando possível após filtro.
-6. Liberação de recursos: Blob URLs são revogadas no unmount para evitar vazamentos.
+## How It Works
+1. Upload: `UploadDropzone` triggers `onFiles`; `index.tsx` validates extensions and creates a Blob URL.
+2. Parsing/extraction:
+   - PDF → extract text with PDF.js for search; faithful rendering via `PdfViewer`.
+   - DOCX → rendered via `docx-preview`; HTML sanitized in `parser.ts` for safe display.
+   - XLSX → text extracted via `xlsx` (for search); formatted preview via `XlsxViewer` (ExcelJS) using the Blob.
+3. Search: `HeaderBar` updates `query`; `useDebouncedValue` (300ms) smooths typing; `index.tsx` scores and sorts results.
+4. Highlight: `PreviewPane` applies `highlightHtml` on HTML/XLSX fallback; `PdfViewer` highlights on Text Layer; `DocxViewer` and `XlsxViewer` highlight after render.
+5. Selection: `FileList` controls the active document; selection is preserved when possible after filtering.
+6. Resource cleanup: Blob URLs are revoked on unmount to avoid leaks.
 
-## Tecnologias
+## Technologies
 - Next.js 15, React 19, TypeScript, Tailwind CSS 4
 - react-pdf + pdfjs-dist, docx-preview, xlsx, exceljs
 
-## Performance e Segurança
-- Debounce na busca (300ms) reduz renders e reprocessamentos em documentos grandes.
-- Revogação de Blob URLs no unmount (economiza memória).
-- HTML de DOCX sanitizado em `src/lib/parser.ts` (remove `script/iframe/object/embed`, eventos `on*` e URLs `javascript:`).
-- XLSX renderizado em `<table>` com estilos inline por célula apenas quando necessário (fidelidade de formatação).
+## Performance and Security
+- 300ms search debounce reduces re-renders and reprocessing for large documents.
+- Blob URLs are revoked on unmount (saves memory).
+- DOCX HTML sanitized in `src/lib/parser.ts` (removes `script/iframe/object/embed`, `on*` events and `javascript:` URLs).
+- XLSX rendered as `<table>` with per-cell inline styles only when necessary (formatting fidelity).
 
-## Erros e Tratamento
-- Extensões inválidas → mensagem ao usuário.
-- `.doc` → não suportado nativamente; orientação para converter para `.docx`.
-- Falhas de parsing/visualização → mensagem descritiva na UI.
+## Errors and Handling
+- Invalid extensions → user message.
+- `.doc` → not supported natively; guidance to convert to `.docx`.
+- Parsing/rendering failures → descriptive message in the UI.
 
-## Execução Local
-1. Instalar dependências:
+## Local Development
+1. Install dependencies:
    ```bash
    npm install
    ```
-2. Desenvolvimento (Turbopack):
+2. Development (Turbopack):
    ```bash
    npm run dev
    ```
-3. Build de produção:
+3. Production build:
    ```bash
    npm run build
    ```
-4. Start de produção:
+4. Production start:
    ```bash
    npm start
    ```
 
-## Build e Produção
-- Worker do PDF.js está em `public/pdf.worker.min.mjs` e é referenciado no `PdfViewer` e no parser de PDF.
-- Estilos da Text Layer do PDF são importados em `src/components/PdfViewer.tsx`.
-- `exceljs` é usado apenas no cliente (carregado dinamicamente no `XlsxViewer`).
+## Build and Production
+- PDF.js worker is at `public/pdf.worker.min.mjs` and is referenced in both `PdfViewer` and the PDF parser.
+- PDF Text Layer styles are imported in `src/components/PdfViewer.tsx`.
+- `exceljs` is client-only (loaded dynamically in `XlsxViewer`).
 
 ## Deploy (Vercel)
-1. Importar o repositório no Vercel (Framework: Next.js).
-2. Build command: `next build` (padrão). Output: `.next/`.
-3. Verificar que `public/pdf.worker.min.mjs` está versionado.
-4. Sem variáveis de ambiente obrigatórias.
+1. Import the repository into Vercel (Framework: Next.js).
+2. Build command: `next build` (default). Output: `.next/`.
+3. Ensure `public/pdf.worker.min.mjs` is versioned.
+4. No required environment variables.
 
-## Solução de Problemas
-- Incompatibilidade de versões PDF.js: verifique `pdf.worker.min.mjs` condizente com `pdfjs-dist` do `package.json`.
-- "TextLayer styles not found": confirme `import "react-pdf/dist/Page/TextLayer.css"` em `PdfViewer.tsx`.
-- XLSX sem estilos: lembre-se que estilos de tema são aproximados (palette padrão do Office, com `tint`); algumas formatações (número/data) podem exigir mapeamento adicional.
-- Planilhas muito grandes: considere virtualização ou paginação por aba.
+## Troubleshooting
+- PDF.js version mismatch: verify `pdf.worker.min.mjs` matches `pdfjs-dist` in `package.json`.
+- "TextLayer styles not found": confirm `import "react-pdf/dist/Page/TextLayer.css"` in `PdfViewer.tsx`.
+- XLSX without styles: remember theme styles are approximations (Office default palette, with `tint`); some formats (number/date) may need extra mapping.
+- Very large spreadsheets: consider virtualization or tab pagination.

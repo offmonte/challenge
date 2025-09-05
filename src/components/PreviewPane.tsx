@@ -19,8 +19,8 @@ export function PreviewPane({ selected, keywords }: PreviewPaneProps) {
         <div className="h-full w-full flex items-center justify-center text-center">
           <div className="max-w-md">
             <div className="mx-auto mb-3 w-10 h-10 rounded-full border border-black/[.08] dark:border-white/[.145] flex items-center justify-center">📄</div>
-            <h2 className="text-base font-semibold mb-1">Selecione um arquivo para visualizar</h2>
-            <p className="text-sm text-black/60 dark:text-white/60">Faça upload de arquivos PDF, DOCX, DOC ou XLSX e selecione-os na lista à esquerda para visualizar seu conteúdo aqui.</p>
+            <h2 className="text-base font-semibold mb-1">Select a file to preview</h2>
+            <p className="text-sm text-black/60 dark:text-white/60">Upload PDF, DOCX, DOC or XLSX files and select them in the list on the left to preview their content here.</p>
           </div>
         </div>
       ) : (

@@ -63,7 +63,7 @@ export function DocxViewer({ fileUrl, keywords }: { fileUrl: string; keywords: s
           applyHighlight(containerRef.current, keywords);
         }
       } catch (e) {
-        if (containerRef.current) containerRef.current.textContent = "Falha ao carregar DOCX.";
+        if (containerRef.current) containerRef.current.textContent = "Failed to load DOCX.";
       }
     }
     load();
