@@ -80,8 +80,21 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     if (keywords.length === 0) return docs;
-    const regex = new RegExp(keywords.map(escapeRegex).join("|"), "i");
-    return docs.filter((d) => regex.test(d.contentText));
+    const pattern = keywords.map(escapeRegex).join("|");
+    const rxText = new RegExp(pattern, "gi");
+    const rxName = new RegExp(pattern, "gi");
+
+    const scored = docs
+      .map((d) => {
+        const textMatches = (d.contentText.match(rxText) || []).length;
+        const nameMatches = (d.name.match(rxName) || []).length;
+        const score = textMatches + nameMatches * 2;
+        return { d, score };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.d.name.localeCompare(b.d.name));
+
+    return scored.map((x) => x.d);
   }, [docs, keywords]);
 
   useEffect(() => {
