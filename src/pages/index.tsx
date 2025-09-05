@@ -3,7 +3,7 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { FileList } from "@/components/FileList";
 import { PreviewPane } from "@/components/PreviewPane";
-import { parseDOCX, parsePDF, parseXLSX } from "@/lib/parser";
+import { parseDOCX, parsePDF, parseXLSX, parseDOCFallback } from "@/lib/parser";
 import { escapeRegex } from "@/lib/text";
 import { useDebouncedValue } from "@/lib/hooks";
 import type { ParsedDoc } from "@/types/docs";
