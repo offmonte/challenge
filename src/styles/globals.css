@@ -59,6 +59,10 @@ body {
   font-weight: 600;
 }
 
+/* XLSX formatted viewer */
+.excel-container { width: 100%; overflow: auto; }
+.excel-cell { background: var(--excel-bg, transparent); color: var(--excel-fg, inherit); }
+
 /* Ensure DOCX preview fits container */
 .docx-container {
   width: 100%;
