@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HeaderBar } from "@/components/HeaderBar";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { FileList } from "@/components/FileList";
 import { PreviewPane } from "@/components/PreviewPane";
 import { parseDOCX, parsePDF, parseXLSX } from "@/lib/parser";
 import { escapeRegex } from "@/lib/text";
+import { useDebouncedValue } from "@/lib/hooks";
 import type { ParsedDoc } from "@/types/docs";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -24,7 +25,8 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const keywords = useMemo(() => query.split(/[\,\s]+/).map((k) => k.trim()).filter(Boolean), [query]);
+  const debouncedQuery = useDebouncedValue(query, 300);
+  const keywords = useMemo(() => debouncedQuery.split(/[\,\s]+/).map((k) => k.trim()).filter(Boolean), [debouncedQuery]);
 
   const acceptExt = [".pdf", ".docx", ".doc", ".xlsx"] as const;
   const acceptAttr = "application/pdf,.pdf,.docx,.doc,.xlsx" as const;
@@ -77,6 +79,19 @@ export default function Home() {
       }
     }
   }, [addError]);
+
+  // Track current blob URLs and revoke them on unmount to free resources
+  const blobUrlsRef = useRef<string[]>([]);
+  useEffect(() => {
+    blobUrlsRef.current = docs.map((d) => d.blobUrl).filter(Boolean) as string[];
+  }, [docs]);
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach((u) => {
+        try { URL.revokeObjectURL(u); } catch {}
+      });
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     if (keywords.length === 0) return docs;
