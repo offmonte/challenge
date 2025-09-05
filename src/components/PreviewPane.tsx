@@ -5,6 +5,7 @@ import { highlightHtml } from "@/lib/highlight";
 
 const PdfViewer = dynamic(() => import("./PdfViewer").then((m) => m.PdfViewer), { ssr: false });
 const DocxDynamic = dynamic(() => import("./DocxViewer").then((m) => m.DocxViewer), { ssr: false });
+const XlsxDynamic = dynamic(() => import("./XlsxViewer").then((m) => m.XlsxViewer), { ssr: false });
 
 export type PreviewPaneProps = {
   selected: ParsedDoc | null;
@@ -35,6 +36,8 @@ export function PreviewPane({ selected, keywords }: PreviewPaneProps) {
             <PdfViewer fileUrl={selected.blobUrl} keywords={keywords} />
           ) : selected.type === "docx" && selected.blobUrl ? (
             <DocxDynamic fileUrl={selected.blobUrl} keywords={keywords} />
+          ) : selected.type === "xlsx" && selected.blobUrl ? (
+            <XlsxDynamic fileUrl={selected.blobUrl} keywords={keywords} />
           ) : (
             <div className="max-w-none text-sm leading-relaxed break-words" dangerouslySetInnerHTML={{ __html: highlightHtml(selected.contentHtml, keywords) }} />
           )}
