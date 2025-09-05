@@ -32,9 +32,9 @@ export function PreviewPane({ selected, keywords }: PreviewPaneProps) {
             <div className="text-xs mb-2 text-amber-700 dark:text-amber-400">{selected.error}</div>
           )}
           {selected.type === "pdf" && selected.blobUrl ? (
-            <PdfViewer fileUrl={selected.blobUrl} />
+            <PdfViewer fileUrl={selected.blobUrl} keywords={keywords} />
           ) : selected.type === "docx" && selected.blobUrl ? (
-            <DocxDynamic fileUrl={selected.blobUrl} />
+            <DocxDynamic fileUrl={selected.blobUrl} keywords={keywords} />
           ) : (
             <div className="max-w-none text-sm leading-relaxed break-words" dangerouslySetInnerHTML={{ __html: highlightHtml(selected.contentHtml, keywords) }} />
           )}
