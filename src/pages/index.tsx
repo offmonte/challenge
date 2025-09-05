@@ -64,18 +64,36 @@ export default function Home() {
           setDocs((prev) => [{ ...parsed, blobUrl }, ...prev]);
           setSelectedId((sid) => sid ?? parsed.id);
         } else if (ext === ".doc") {
-          const parsed: ParsedDoc = {
-            id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-            name: file.name,
-            type: "doc",
-            contentHtml:
-              '<div class="text-sm">O formato .doc não é suportado no navegador. Converta para .docx e envie novamente.</div>',
-            contentText: ".doc not supported",
-            error: ".doc parsing is not supported in-browser",
-            blobUrl,
-          };
-          setDocs((prev) => [parsed, ...prev]);
-          setSelectedId((sid) => sid ?? parsed.id);
+          try {
+            const b64 = Buffer.from(buf).toString("base64");
+            const resp = await fetch("/api/convert-doc", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ filename: file.name, base64: b64, output: "docx" }),
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            const { url } = await resp.json();
+            const converted = await fetch(url);
+            const convBuf = await converted.arrayBuffer();
+            const convFile = new File([convBuf], file.name.replace(/\.doc$/i, ".docx"), { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+            const convBlobUrl = URL.createObjectURL(convFile);
+            const parsed = await parseDOCX(convFile.name, convBuf);
+            setDocs((prev) => [{ ...parsed, blobUrl: convBlobUrl }, ...prev]);
+            setSelectedId((sid) => sid ?? parsed.id);
+          } catch (err: any) {
+            const parsed: ParsedDoc = {
+              id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+              name: file.name,
+              type: "doc",
+              contentHtml:
+                '<div class="text-sm">Falha ao converter .doc automaticamente. Converta para .docx e envie novamente.</div>',
+              contentText: ".doc not supported",
+              error: ".doc parsing is not supported in-browser",
+              blobUrl,
+            };
+            setDocs((prev) => [parsed, ...prev]);
+            setSelectedId((sid) => sid ?? parsed.id);
+          }
         }
       } catch (e: any) {
         addError(`Falha ao processar ${file.name}: ${e?.message || e}`);
