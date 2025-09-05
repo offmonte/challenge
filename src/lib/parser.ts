@@ -99,3 +99,24 @@ export async function parseXLSX(name: string, buf: ArrayBuffer): Promise<ParsedD
     contentText: textParts.join("\n"),
   };
 }
+
+export async function parseDOCFallback(name: string, buf: ArrayBuffer): Promise<ParsedDoc> {
+  // Extração básica de texto de um arquivo .doc binário (baixa fidelidade)
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  // Mantém sequências de caracteres imprimíveis (ASCII) e quebras de linha
+  const matches = binary.match(/[\t\r\n\x20-\x7E]{3,}/g) || [];
+  const text = matches.join("\n");
+  const contentHtml = `<div class="text-xs text-amber-700 dark:text-amber-400 mb-2">Pré-visualização de texto simples de arquivo .doc (baixa fidelidade)</div><pre>${esc(text)}</pre>`;
+  return {
+    id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+    name,
+    type: "doc",
+    contentHtml,
+    contentText: text,
+  };
+}
