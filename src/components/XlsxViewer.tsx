@@ -13,6 +13,47 @@ function argbToCss(argb?: { argb?: string } | null): string | null {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function adjustTint(hex: string, tint?: number): string {
+  if (!hex) return hex;
+  const toRgb = (h: string) => {
+    const r = parseInt(h.slice(1, 3), 16);
+    const g = parseInt(h.slice(3, 5), 16);
+    const b = parseInt(h.slice(5, 7), 16);
+    return { r, g, b };
+  };
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  const mix = (c: number, to: number, f: number) => Math.round(c + (to - c) * f);
+  const { r, g, b } = toRgb(hex);
+  if (typeof tint === "number") {
+    if (tint > 0) {
+      const f = Math.min(1, tint);
+      return `#${toHex(mix(r, 255, f))}${toHex(mix(g, 255, f))}${toHex(mix(b, 255, f))}`;
+    }
+    if (tint < 0) {
+      const f = Math.min(1, -tint);
+      return `#${toHex(mix(r, 0, f))}${toHex(mix(g, 0, f))}${toHex(mix(b, 0, f))}`;
+    }
+  }
+  return hex;
+}
+
+function themeToCss(theme?: number, tint?: number): string | null {
+  if (typeof theme !== "number") return null;
+  const palette = [
+    "#FFFFFF", "#000000", "#EEECE1", "#1F497D",
+    "#4F81BD", "#C0504D", "#9BBB59", "#8064A2", "#4BACC6", "#F79646",
+  ];
+  const base = palette[theme] || null;
+  return base ? adjustTint(base, tint) : null;
+}
+
+function resolveColor(color: any): string | null {
+  if (!color) return null;
+  if (color.argb) return argbToCss(color);
+  if (typeof color.theme === "number") return themeToCss(color.theme, color.tint);
+  return null;
+}
+
 function applyHighlight(root: HTMLElement, words: string[]) {
   // Unwrap previous highlights
   root.querySelectorAll("mark.keyword-highlight").forEach((m) => {
@@ -178,9 +219,28 @@ export function XlsxViewer({ fileUrl, keywords }: { fileUrl: string; keywords: s
                       const m = s.mergeMap.get(`${cell.r}:${cell.c}`);
                       if (m && m.rowspan === 0 && m.colspan === 0) return null;
                       const style: any = {};
-                      if (cell.bg) style["--excel-bg" as any] = cell.bg;
-                      if (cell.fg) style["--excel-fg" as any] = cell.fg;
+                      if (cell.bg) style.background = cell.bg;
+                      if (cell.fg) style.color = cell.fg;
                       if (cell.alignH) style.textAlign = cell.alignH;
+                      if (cell.alignV) style.verticalAlign = cell.alignV;
+                      if (cell.fontSize) style.fontSize = `${cell.fontSize}px`;
+                      if (cell.fontFamily) style.fontFamily = cell.fontFamily;
+                      const mapSide = (s: any) => {
+                        if (!s || !s.style) return null;
+                        const width = s.style === "thin" ? 1 : s.style === "medium" ? 2 : s.style === "thick" ? 3 : s.style === "double" ? 3 : 1;
+                        const styleName = s.style === "double" ? "double" : "solid";
+                        const color = resolveColor(s.color) || undefined;
+                        return { width, styleName, color };
+                      };
+                      const b = cell.border || {};
+                      const top = mapSide(b.top);
+                      const right = mapSide(b.right);
+                      const bottom = mapSide(b.bottom);
+                      const left = mapSide(b.left);
+                      if (top) { style.borderTopWidth = `${top.width}px`; style.borderTopStyle = top.styleName; if (top.color) style.borderTopColor = top.color; }
+                      if (right) { style.borderRightWidth = `${right.width}px`; style.borderRightStyle = right.styleName; if (right.color) style.borderRightColor = right.color; }
+                      if (bottom) { style.borderBottomWidth = `${bottom.width}px`; style.borderBottomStyle = bottom.styleName; if (bottom.color) style.borderBottomColor = bottom.color; }
+                      if (left) { style.borderLeftWidth = `${left.width}px`; style.borderLeftStyle = left.styleName; if (left.color) style.borderLeftColor = left.color; }
                       const cls = [
                         "excel-cell",
                         cell.bold ? "font-semibold" : "",
