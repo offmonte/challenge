@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
 
 // Configure worker via CDN to match the installed pdfjs version
 const WORKER_SRC = "/pdf.worker.min.mjs" as const;
