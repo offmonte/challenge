@@ -68,16 +68,9 @@ export default function Home() {
           // Para ativar: defina NEXT_PUBLIC_CLOUDCONVERT_ENABLED=true no build e configure CLOUDCONVERT_API_KEY no servidor.
           const enableCloudConvert = process.env.NEXT_PUBLIC_CLOUDCONVERT_ENABLED === "true";
           if (!enableCloudConvert) {
-            const parsed: ParsedDoc = {
-              id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-              name: file.name,
-              type: "doc",
-              contentHtml:
-                '<div class="text-sm">O formato .doc não é suportado no navegador. Quando a conversão estiver habilitada, ele será convertido automaticamente para .docx.</div>',
-              contentText: ".doc not supported",
-              error: ".doc parsing is not supported in-browser",
-              blobUrl,
-            };
+            const parsed = await parseDOCFallback(file.name, buf);
+            parsed.error = "ERR_DOC_CONVERT_DISABLED";
+            parsed.blobUrl = blobUrl;
             setDocs((prev) => [parsed, ...prev]);
             setSelectedId((sid) => sid ?? parsed.id);
           } else {
